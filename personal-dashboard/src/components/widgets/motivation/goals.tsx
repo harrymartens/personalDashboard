@@ -2,6 +2,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Goal } from "lucide-react";
 import { useEffect, useState } from "react";
+import Marquee from "react-fast-marquee";
+
 
 interface Quote {
   data: {
@@ -22,6 +24,8 @@ export default function Goals() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data: Quote = await response.json();
+
+        console.log("Data", data);
         setQuote(data);
         // Store the quote and today's date in localStorage
         localStorage.setItem("dailyQuote", JSON.stringify(data));
@@ -121,12 +125,12 @@ export default function Goals() {
       </div>
 
       <div className="relative mt-auto w-full overflow-hidden rounded border-2 p-2">
-        <div className="flex animate-marquee whitespace-nowrap">
-          <span className="inline-block font-LED text-xl text-light">
-            {quoteString + "                      " + quoteString}
-          </span>
-        </div>
-      </div>
+      <Marquee gradient={false} speed={50}>
+        <span className="mx-20 inline-block font-LED text-xl text-light">
+          {quoteString}
+        </span>
+      </Marquee>
+    </div>
     </div>
   );
 }

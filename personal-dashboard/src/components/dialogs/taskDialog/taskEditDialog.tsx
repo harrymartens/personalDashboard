@@ -1,26 +1,55 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Task } from "@/types/task";
-import { Row } from "@tanstack/react-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { EllipsisVertical } from "lucide-react";
-import { useState } from "react";
+import { z } from "zod";
+import TaskForm, { formSchema } from "./taskForm";
+import { updateTask } from "@/api";
 
-export default function TaskEditDialog({ row }: { row: Row<Task> }) {
-  const [open, setOpen] = useState(false);
+type EditTaskDialogProps = {
+  task: z.infer<typeof formSchema>; // the task object to edit
+  callback: () => void;
+};
+
+export default function EditTaskDialog({
+  task,
+  callback,
+}: EditTaskDialogProps) {
+  async function handleUpdate(values: z.infer<typeof formSchema>) {
+    try {
+      const result = await updateTask(values);
+      if (!result) {
+        console.error("Failed to update task");
+      } else {
+        callback();
+      }
+    } catch (error) {
+      console.error("Unexpected error updating task:", error);
+    }
+  }
 
   return (
     <div>
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild className="ml-auto">
-
-        <EllipsisVertical className="cursor-pointer text-dark/70 hover:text-dark" />
-    </DialogTrigger>
-    <DialogContent>
+      <Dialog>
+        <DialogTrigger asChild className="ml-auto">
+          <EllipsisVertical className="cursor-pointer p-0 text-dark/70 hover:text-dark" />
+        </DialogTrigger>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create a new task</DialogTitle>
-            <DialogDescription>Input info to create a task</DialogDescription>
+            <DialogTitle>Edit task</DialogTitle>
+            <DialogDescription>Update the task details</DialogDescription>
           </DialogHeader>
-          </DialogContent>
-
+          <TaskForm
+          onSubmit={handleUpdate}
+          initialValues={task}
+          submitButtonLabel="Save Changes"
+        />
+        </DialogContent>
       </Dialog>
     </div>
   );

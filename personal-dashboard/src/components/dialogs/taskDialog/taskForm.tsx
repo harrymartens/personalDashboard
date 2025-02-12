@@ -1,13 +1,8 @@
 "use client";
 
-import { createTask, getPriority, getStatus, getTypes } from "@/api";
+import {  getPriority, getStatus, getTypes } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -29,7 +24,7 @@ import {
 } from "@/components/ui/form";
 
 import { Input } from "@/components/ui/input";
-import { CalendarIcon, ChevronDown, CirclePlus, Repeat } from "lucide-react";
+import { CalendarIcon, ChevronDown, Repeat } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -46,37 +41,27 @@ import { format, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 
-
-
-const formSchema = z
-  .object({
-    title: z.string().min(1, {
-      message: "Task must have a title.",
-    }),
-    type: z.string(),
-    created_at: z.string(),
-    status: z.string(),
-    complete: z.boolean(),
-    completed_date: z.string().nullable(),
-    priority: z.string(),
-    scheduled_date: z.string().nullable(),
-    course: z.string().nullable(),
-    due_date: z.string().nullable(),
-    reoccurring: z.boolean(),
-    reoccurring_interval: z.coerce.number(), // Coerce input to number
-    week: z
-      .coerce
-      .number({ message: "Week must be a number." })
-      .nullable(),
-    weight: z
-      .coerce
-      .number({ message: "Weight must be a number." })
-      .nullable(),
-  })
+export const formSchema = z.object({
+  id: z.number().optional(),
+  title: z.string().min(1, { message: "Task must have a title." }),
+  type: z.string(),
+  created_at: z.string(),
+  status: z.string(),
+  complete: z.boolean(),
+  completed_date: z.string().nullable(),
+  priority: z.string(),
+  scheduled_date: z.string().nullable(),
+  course: z.string().nullable(),
+  due_date: z.string().nullable(),
+  reoccurring: z.boolean(),
+  reoccurring_interval: z.coerce.number(),
+  week: z.coerce.number({ message: "Week must be a number." }).nullable(),
+  weight: z.coerce.number({ message: "Weight must be a number." }).nullable(),
+})
   .superRefine((values, ctx) => {
-    // If reoccurring is true, ensure that the interval is greater than 0.
     if (values.reoccurring && values.reoccurring_interval <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -93,11 +78,15 @@ const formSchema = z
     }
   });
 
+  type TaskFormProps = {
+    initialValues: z.infer<typeof formSchema>;
+    onSubmit: (values: z.infer<typeof formSchema>) => Promise<void>;
+    submitButtonLabel: string;
+  };
 
 
-
-export default function TaskDialog({ callback }: { callback: () => void }) {
-  const [open, setOpen] = useState(false);
+  export default function TaskForm({ initialValues, onSubmit, submitButtonLabel }: TaskFormProps) {
+  // const [open, setOpen] = useState(false);
   const [data, setData] = useState<{ name: string }[] | null>(null);
   const [statusList, setStatus] = useState<{ name: string }[] | null>(null);
   const [priorityList, setPriority] = useState<{ name: string }[] | null>(null);
@@ -105,44 +94,11 @@ export default function TaskDialog({ callback }: { callback: () => void }) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      type: "Personal",
-      created_at: new Date().toISOString(),
-      status: "Todo",
-      complete: false,
-      completed_date: null,
-      priority: "Medium",
-      scheduled_date: null,
-      course: "",
-      due_date: null,
-      week: null,
-      weight: null,
-      reoccurring: false,
-      reoccurring_interval: 0,
-    },
+    defaultValues: initialValues,
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      const result = await createTask(values);
-      if (!result) {
-        console.error("Failed to create task");
-      } else {
-        callback();
-      }
-    } catch (error) {
-      console.error("Unexpected error creating task:", error);
-    }
-  }
-
-  useEffect(() => {
-    if (form.formState.isSubmitSuccessful) {
-      form.reset();
-    }
-  }, [form.formState, form.reset]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -195,17 +151,6 @@ export default function TaskDialog({ callback }: { callback: () => void }) {
 
   return (
     <div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild className="ml-auto">
-          <Button className="hover:bg-red">
-            <CirclePlus /> Add New
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a new task</DialogTitle>
-            <DialogDescription>Input info to create a task</DialogDescription>
-          </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <ScrollArea className="max-h-[400px] overflow-y-auto">
@@ -580,15 +525,19 @@ export default function TaskDialog({ callback }: { callback: () => void }) {
 
               <div className="pt-4">
                 <DialogTrigger asChild>
-                  <Button type="submit" disabled={!form.formState.isValid}>
-                    Submit
+                  <Button type="submit" disabled={!form.formState.isValid} onClick={() => {
+                    toast("Task has been created", {
+                      description: form.getValues("title"),
+                    });
+
+
+                  }}>
+                    {submitButtonLabel}
                   </Button>
                 </DialogTrigger>
               </div>
             </form>
           </Form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

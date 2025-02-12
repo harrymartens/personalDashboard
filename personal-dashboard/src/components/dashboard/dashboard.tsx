@@ -1,24 +1,22 @@
 // import CalendarWidget from "@/app/components/widgets/calendarWidget";
 
-// Increase week for reoccuring tasks
-// Show course code on items
-// Edit Tasks Button
+// Edit Tasks Button api
+// Delete remove reoccurring
+// Coloured course codes in tasks
 // Change quote font
 // Make Goals adjustable
 // Make Habits Adjustable
 
-
 import TaskTable from "@/components/widgets/tasks/taskWidget";
-import {  Footprints, Calendar } from "lucide-react";
+import { Footprints, Calendar } from "lucide-react";
 import WeatherWidget from "../widgets/weather";
 import Goals from "../widgets/motivation/goals";
-import TaskDialog from "../dialogs/taskDialog/taskDialog";
 import { useState, useEffect, useCallback } from "react";
 import { getSteps, getTasks } from "@/api";
 import { Task } from "@/types/task";
 import HealthWidget from "../widgets/health/healthWidget";
 import HabitTrackerWidget from "../widgets/habits/habitTrackerWidget";
-
+import CreateTaskDialog from "../dialogs/taskDialog/createTaskDialog";
 
 const today = new Date();
 const year = today.getFullYear();
@@ -29,57 +27,49 @@ const oneDayInMs = 24 * 60 * 60 * 1000;
 const diffInDays = Math.ceil(daysRemaining / oneDayInMs);
 
 export default function Dashboard() {
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  
-const [tasks, setTasks] = useState<Task[]>([]);
+  const [steps, setSteps] = useState(0);
+  const [loading, setLoading] = useState<boolean>(false);
 
-const [steps, setSteps] = useState(0);
-const [loading, setLoading] = useState<boolean>(false);
-
-
-
-const fetchTasks = async () => {
-  try {
-    const response = await getTasks();
-    if (response) {
-      setTasks(response as Task[]);
-    }
-  } catch (err) {
-    console.error("Error fetching tasks:", err);
-  }
-};
-
-useEffect(() => {
-    fetchTasks();
-  }, []);
-
-const handleTaskChange = useCallback(
-  () => {
-    fetchTasks()
-  },
-  []
-) 
-
-useEffect(() => {
-  const fetchHealthData = async () => {
-    setLoading(true);
+  const fetchTasks = async () => {
     try {
-      const response = await getSteps();      
+      const response = await getTasks();
       if (response) {
-        const stepCount = response[0].steps
-        const formattedCount = stepCount.toLocaleString()
-        setSteps(formattedCount);
+        setTasks(response as Task[]);
       }
     } catch (err) {
       console.error("Error fetching tasks:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
-  fetchHealthData();
-}, []);
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
+  const handleTaskChange = useCallback(() => {
+    fetchTasks();
+  }, []);
+
+  useEffect(() => {
+    const fetchHealthData = async () => {
+      setLoading(true);
+      try {
+        const response = await getSteps();
+        if (response) {
+          const stepCount = response[0].steps;
+          const formattedCount = stepCount.toLocaleString();
+          setSteps(formattedCount);
+        }
+      } catch (err) {
+        console.error("Error fetching tasks:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHealthData();
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -94,11 +84,7 @@ useEffect(() => {
               <Footprints className="size-10" />
               <div className="flex flex-col">
                 <div>
-                  {loading ? (
-                  <a>...</a> 
-                ) : (
-                  <a>{steps}</a>
-                )}
+                  {loading ? <a>...</a> : <a>{steps}</a>}
                   <a className="text-xs"> / 10,000</a>
                 </div>
                 <a className="text-sml font-light">Steps</a>
@@ -115,16 +101,16 @@ useEffect(() => {
           </div>
 
           {/* Task Widget */}
-          <div className="col-span-2 h-full  rounded-xl bg-light p-8 shadow">
+          <div className="col-span-2 h-[500px]  rounded-xl bg-light p-8 shadow">
             {/* HEADING */}
             <div className="flex items-center justify-between ">
               <a className="text-lrg font-semibold">Tasks</a>
-              
-                <TaskDialog callback={handleTaskChange}/>
+
+              <CreateTaskDialog callback={handleTaskChange}/>
             </div>
 
             {/* TABLE */}
-            <TaskTable tasks={tasks} onTaskUpdated={handleTaskChange}/>
+            <TaskTable tasks={tasks} onTaskUpdated={handleTaskChange} />
           </div>
         </div>
 
@@ -137,8 +123,7 @@ useEffect(() => {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl bg-light p-4 shadow">
           {/* Widget C */}
-            <HealthWidget />
-
+          <HealthWidget />
         </div>
         <div className="rounded-xl bg-light p-4 shadow">
           {/* Widget D */}

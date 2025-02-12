@@ -19,7 +19,7 @@ interface DataTableProps<TData> {
 
 export function DataTable<TData>({ table }: DataTableProps<TData>) {
   return (
-    <div>
+    <div className="flex h-4/5 flex-col">
       <UITable>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -66,7 +66,10 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
       </UITable>
 
       {/* Pagination Controls */}
-      <div className="flex items-center justify-end space-x-2 pt-4">
+      <div>
+        
+      </div>
+      <div className="mt-auto flex items-center justify-end space-x-2 pt-4">
         <Button
           variant="outline"
           size="icon"

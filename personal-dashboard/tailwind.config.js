@@ -7,15 +7,15 @@ module.exports = {
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
-		keyframes: {
+		animation: {
+			marquee: 'marquee 10s linear infinite',
+		  },
+		  keyframes: {
 			marquee: {
-			  '0%': { transform: 'translateX(100%)' },
-			  '100%': { transform: 'translateX(-1000%)' },
+			  '0%': { transform: 'translateX(0)' },
+			  '100%': { transform: 'translateX(-500%)' },
 			},
 		  },
-		  animation: {
-			marquee: 'marquee 30s linear infinite',
-		},
 		minHeight:{
 			'506':'506px'
 		},

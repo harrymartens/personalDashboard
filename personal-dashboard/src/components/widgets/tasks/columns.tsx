@@ -6,7 +6,6 @@ import {
   ArrowDown,
   ArrowRight,
   Repeat,
-  X,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,14 +17,12 @@ import {
   Timer,
 } from "lucide-react";
 import { Task } from "@/types/task";
-import { markTaskComplete, markTaskUncomplete, setReoccurringFalse } from "@/api";
-import { toast } from "sonner";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import TaskEditDialog from "@/components/dialogs/taskDialog/taskEditDialog";
+  markTaskComplete,
+  markTaskUncomplete,
+} from "@/api";
+import { toast } from "sonner";
+import EditTaskDialog from "@/components/dialogs/taskDialog/taskEditDialog";
 
 const STATUS_ICON_MAP = {
   Todo: Circle,
@@ -45,15 +42,11 @@ const PRIORITY_ICON_MAP = {
 
 type Priority = keyof typeof PRIORITY_ICON_MAP;
 
-const removeRepeat = async(task:Task) => {
-  await setReoccurringFalse(task)
-}
 
 export function getColumns(
   visibleColumns: string[],
   onTaskUpdated: () => void
 ): AccessorKeyColumnDef<Task>[] {
-
   const allColumns: AccessorKeyColumnDef<Task>[] = [
     {
       accessorKey: "complete",
@@ -77,9 +70,8 @@ export function getColumns(
                     label: "Undo",
                     onClick: async () => {
                       await markTaskUncomplete(row.original);
-                      if (row.original.reoccurring){
+                      if (row.original.reoccurring) {
                         // If repeated task is marked as complete, then undone, delete the newly created repeat
-
                       }
                       onTaskUpdated();
                     },
@@ -101,7 +93,7 @@ export function getColumns(
         const title = row.original.title;
         const reoccurring = row.original.reoccurring;
         const reoccurring_interval = row.original.reoccurring_interval;
-        const courseCode = row.original.course
+        const courseCode = row.original.course;
         return (
           <div className="flex items-center gap-3">
             <Badge variant="default" className="">
@@ -109,31 +101,16 @@ export function getColumns(
             </Badge>
             {title}
             {courseCode && (
-              
               <span className="rounded-full border border-gray-300 bg-dark/20 px-2 py-0.5 text-xs text-dark">
-      {courseCode}
-    </span>
-            
+                {courseCode}
+              </span>
             )}
             {reoccurring && (
-              <HoverCard openDelay={300} closeDelay={100}>
-                <HoverCardTrigger>
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Repeat className="size-4 text-dark/20" />
                     <span>{reoccurring_interval}</span>
                   </Badge>
-                </HoverCardTrigger>
-                <HoverCardContent className="m-0 flex w-min items-center justify-center rounded-full p-0 text-xs">
-                  <Button onClick={()=>{removeRepeat(row.original)
-                    onTaskUpdated()
-                  }}>
-                    <X />
-                    Remove repeat
-                  </Button>
-                </HoverCardContent>
-              </HoverCard>
             )}
-            
           </div>
         );
       },
@@ -220,9 +197,89 @@ export function getColumns(
           }
         }
         return (
-          <div className="flex justify-center">
+          <div className="flex items-center justify-center space-x-2">
             <div
               className={`w-fit rounded-xl ${bgColor} px-3 py-1 text-center font-medium`}
+            >
+              {formatted}
+            </div>
+            {row.original.week && (
+              <div className="rounded-full bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">
+                W{row.original.week}
+              </div>
+            )}
+          </div>
+        );
+      },
+      sortingFn: (rowA, rowB) => {
+        if (!rowA.original.scheduled_date && !rowB.original.scheduled_date) {
+          return 0;
+        } else if (
+          rowA.original.scheduled_date &&
+          !rowB.original.scheduled_date
+        ) {
+          return -1;
+        } else if (
+          !rowA.original.scheduled_date &&
+          rowB.original.scheduled_date
+        ) {
+          return 1;
+        } else if (
+          rowA.original.scheduled_date &&
+          rowB.original.scheduled_date
+        ) {
+          const rowADate = new Date(rowA.original.scheduled_date).getTime();
+          const rowBDate = new Date(rowB.original.scheduled_date).getTime();
+
+          return rowADate - rowBDate;
+        } else {
+          return 0;
+        }
+      },
+    },
+    {
+      accessorKey: "due_date",
+      header: ({ column }: { column: Column<Task> }) => (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Due Date
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 size-4 font-bold" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 size-4 font-bold" />
+            ) : (
+              <ChevronsUpDown className="ml-2 size-4 font-normal" />
+            )}
+          </Button>
+        </div>
+      ),
+      cell: ({ row }: { row: Row<Task> }) => {
+        let date = new Date();
+        if (row.original.due_date) {
+          date = new Date(row.original.due_date);
+        } else {
+          return <div className="flex justify-center">-</div>;
+        }
+
+        let formatted = "Not Scheduled";
+
+
+        if (date != null) {
+
+          formatted = date.toLocaleDateString("en-AU", {
+            day: "numeric",
+            month: "short",
+            timeZone: "Australia/Sydney",
+          });
+        
+        }
+        return (
+          <div className="flex items-center justify-center space-x-2">
+            <div
+              className={`w-fit rounded-xl bg-dark/20 px-3 py-1 text-center font-medium`}
             >
               {formatted}
             </div>
@@ -356,9 +413,10 @@ export function getColumns(
       header: () => <div></div>,
       cell: ({ row }: { row: Row<Task> }) => {
         return (
-          <TaskEditDialog row={row}/>
-        )
-
+          <>
+            <EditTaskDialog task={row.original} callback={onTaskUpdated} />
+          </>
+        );
       },
     },
   ];

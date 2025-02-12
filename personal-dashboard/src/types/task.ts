@@ -14,7 +14,7 @@ export interface Task {
   completed_date: string | null;
   priority: string;
   scheduled_date: string | null;
-  course?: string | null;
+  course: string | null;
   due_date: string | null;
   week: number | null;
   weight: number | null;

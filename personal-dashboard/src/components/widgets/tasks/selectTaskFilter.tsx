@@ -41,8 +41,7 @@ export const frameworks = [
       "complete",
       "title",
       "scheduled",
-      "course",
-      "week",
+      "due_date",
       "weight",
       "edit"
     ],

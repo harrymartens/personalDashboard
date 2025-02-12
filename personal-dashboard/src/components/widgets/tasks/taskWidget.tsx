@@ -89,9 +89,8 @@ export default function TaskTable({ tasks,onTaskUpdated }: { tasks: Task[],onTas
     },
   });
 
-  // ----- Render -----
   return (
-    <div className="mx-auto">
+    <div className="mx-auto h-full">
       {/* Top bar with filters */}
       <div className="flex items-end gap-3 py-2">
         <SearchTaskFilter table={table} />
