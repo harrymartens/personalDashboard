@@ -9,21 +9,24 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import SleepGraph from "./sleepGraph";
+import WeightGraph from "./weightGraph";
+
+
 
 export default function HealthWidget() {
-  // Daily Weight
-  // Workouts this week
-  // Sleep hours last
+  
 
   return (
     <div className="flex size-full flex-col gap-4">
       <a className="text-med font-semibold">Health</a>
+
       <Drawer>
         <DrawerTrigger>
-          <div className="flex flex-row items-center justify-around gap-4">
-            <p>A</p>
-            <p>B</p>
-            <p>C</p>
+          <div className="flex size-full flex-row items-center justify-around gap-4">
+            <WeightGraph />
+            <SleepGraph />
+
           </div>
         </DrawerTrigger>
         <DrawerContent>

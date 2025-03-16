@@ -37,6 +37,21 @@ export const getTypes = async () => {
   }
 };
 
+export const createType = async ({
+  name,
+}: {
+  name: string;
+}): Promise<{ name: string } | null> => {
+  try {
+    console.log(name);
+
+    return { name };
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return null;
+  }
+};
+
 export const archiveType = async (name: string) => {
   try {
     const { error } = await supabase
@@ -57,20 +72,17 @@ export const archiveType = async (name: string) => {
   }
 };
 
-export const createType = async ({
-  name,
-}: {
-  name: string;
-}): Promise<{ name: string } | null> => {
-  try {
-    console.log(name);
+async function mapTypeToId(type: string): Promise<number> {
+  const types = (await getTypes()) ?? [];
 
-    return { name };
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    return null;
+  const foundType = types.find((item) => item.name === type);
+
+  if (foundType) {
+    return foundType.id;
+  } else {
+    return 1;
   }
-};
+}
 
 export const getStatus = async () => {
   try {
@@ -90,6 +102,18 @@ export const getStatus = async () => {
   }
 };
 
+async function mapStatusToId(status: string): Promise<number> {
+  const statuses = (await getStatus()) ?? [];
+
+  const foundStatus = statuses.find((item) => item.name === status);
+
+  if (foundStatus) {
+    return foundStatus.id;
+  } else {
+    return 1;
+  }
+}
+
 export const getPriority = async () => {
   try {
     const { data, error } = await supabase
@@ -108,12 +132,32 @@ export const getPriority = async () => {
   }
 };
 
-export const getSteps = async () => {
+async function mapPriorityToId(priority: string): Promise<number> {
+  const priorities = (await getPriority()) ?? [];
+
+  const foundPriority = priorities.find((item) => item.name === priority);
+
+  if (foundPriority) {
+    return foundPriority.id;
+  } else {
+    return 1;
+  }
+}
+
+export const createTask = async (task: Task) => {
+  if (task.id) {
+    delete task.id;
+  }
+
   try {
+    task.type = (await mapTypeToId(task.type)).toString();
+    task.priority = (await mapPriorityToId(task.priority)).toString();
+    task.status = (await mapStatusToId(task.status)).toString();
+
     const { data, error } = await supabase
-      .from("healthdata")
-      .select("steps")
-      .eq("date", new Date().toUTCString());
+      .from("Tasks")
+      .insert([task])
+      .select();
 
     if (error) {
       console.error("Error fetching tasks:", error);
@@ -127,45 +171,23 @@ export const getSteps = async () => {
   }
 };
 
-export const createTask = async (task: Task) => {
-  if (task.id) {
-    delete task.id;
-  }
-
+export const updateTask = async (task: Task) => {
   try {
-    const priorities = (await getPriority()) ?? [];
+    const { id, ...updatedFields } = task;
 
-    const foundPriority = priorities.find(
-      (item) => item.name === task.priority
-    );
+    updatedFields.type = (await mapTypeToId(updatedFields.type)).toString()
+    updatedFields.status = (await mapStatusToId(updatedFields.status)).toString()
+    updatedFields.priority = (await mapPriorityToId(updatedFields.priority)).toString()
 
-    if (foundPriority) {
-      task.priority = foundPriority.id;
-    }
-
-    const types = (await getTypes()) ?? [];
-
-    const foundType = types.find((item) => item.name === task.type);
-    if (foundType) {
-      task.type = foundType.id;
-    }
-
-    const status = (await getStatus()) ?? [];
-
-    const foundStatus = status.find((item) => item.name === task.status);
-    if (foundStatus) {
-      task.status = foundStatus.id;
-    }
-
-    console.log("Right before create API", task);
 
     const { data, error } = await supabase
       .from("Tasks")
-      .insert([task])
+      .update(updatedFields)
+      .eq("id", id)
       .select();
 
     if (error) {
-      console.error("Error fetching tasks:", error);
+      console.error("Error updating task:", error);
       return null;
     }
 
@@ -200,8 +222,8 @@ export const markTaskComplete = async (task: Task) => {
 
       futureTask.scheduled_date = newScheduledDate.toISOString();
 
-
-      if(futureTask.week) futureTask.week = futureTask.week+futureTask.reoccurring_interval
+      if (futureTask.week)
+        futureTask.week = futureTask.week + futureTask.reoccurring_interval;
 
       await createTask(futureTask);
     }
@@ -218,26 +240,6 @@ export const markTaskUncomplete = async (task: Task) => {
     const { data, error } = await supabase
       .from("Tasks")
       .update({ complete: false })
-      .eq("id", task.id)
-      .select();
-
-    if (error) {
-      console.error("Error fetching tasks:", error);
-      return null;
-    }
-
-    return data;
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    return null;
-  }
-};
-
-export const setReoccurringFalse = async (task: Task) => {
-  try {
-    const { data, error } = await supabase
-      .from("Tasks")
-      .update({ reoccurring: false })
       .eq("id", task.id)
       .select();
 
