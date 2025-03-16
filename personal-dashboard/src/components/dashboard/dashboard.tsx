@@ -1,9 +1,9 @@
 // import CalendarWidget from "@/app/components/widgets/calendarWidget";
 
-// Edit Tasks Button api
-// Delete remove reoccurring
-// Coloured course codes in tasks
 // Change quote font
+// Finish Health Widget
+  // Format weight
+  // Add date to sleep
 // Make Goals adjustable
 // Make Habits Adjustable
 
@@ -17,6 +17,7 @@ import { Task } from "@/types/task";
 import HealthWidget from "../widgets/health/healthWidget";
 import HabitTrackerWidget from "../widgets/habits/habitTrackerWidget";
 import CreateTaskDialog from "../dialogs/taskDialog/createTaskDialog";
+import FinanceWidget from "../widgets/finance/financeWidget";
 
 const today = new Date();
 const year = today.getFullYear();
@@ -128,7 +129,7 @@ export default function Dashboard() {
         <div className="rounded-xl bg-light p-4 shadow">
           {/* Widget D */}
           <div className="flex aspect-video items-center justify-center rounded-xl bg-gray-100">
-            Finance
+            <FinanceWidget />
           </div>
         </div>
         <div className="rounded-xl bg-light p-4 shadow">

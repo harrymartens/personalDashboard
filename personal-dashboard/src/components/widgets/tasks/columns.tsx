@@ -17,10 +17,7 @@ import {
   Timer,
 } from "lucide-react";
 import { Task } from "@/types/task";
-import {
-  markTaskComplete,
-  markTaskUncomplete,
-} from "@/api";
+import { markTaskComplete, markTaskUncomplete } from "@/api";
 import { toast } from "sonner";
 import EditTaskDialog from "@/components/dialogs/taskDialog/taskEditDialog";
 
@@ -42,11 +39,31 @@ const PRIORITY_ICON_MAP = {
 
 type Priority = keyof typeof PRIORITY_ICON_MAP;
 
-
 export function getColumns(
   visibleColumns: string[],
   onTaskUpdated: () => void
 ): AccessorKeyColumnDef<Task>[] {
+  const courseColorMap: Record<string, string> = {}; // Store assigned colors
+
+  const distinctColors = [
+    "hsl(220, 85%, 55%)",  // Blue
+    "hsl(280, 85%, 55%)",  // Purple
+    "hsl(160, 85%, 55%)",  // Teal
+    "hsl(310, 85%, 55%)",  // Pink
+    "hsl(200, 85%, 55%)",  // Cyan
+    "hsl(350, 85%, 55%)",  // Coral
+    "hsl(130, 85%, 55%)",  // Light Green (but distinct from classic green)
+    "hsl(260, 85%, 55%)",  // Deep Violet
+  ];
+  
+  const getCourseColor = (courseCode: string) => {
+    if (!courseColorMap[courseCode]) {
+      const index = Object.keys(courseColorMap).length % distinctColors.length;
+      courseColorMap[courseCode] = distinctColors[index];
+    }
+    return courseColorMap[courseCode];
+  };
+
   const allColumns: AccessorKeyColumnDef<Task>[] = [
     {
       accessorKey: "complete",
@@ -94,6 +111,7 @@ export function getColumns(
         const reoccurring = row.original.reoccurring;
         const reoccurring_interval = row.original.reoccurring_interval;
         const courseCode = row.original.course;
+
         return (
           <div className="flex items-center gap-3">
             <Badge variant="default" className="">
@@ -101,15 +119,19 @@ export function getColumns(
             </Badge>
             {title}
             {courseCode && (
-              <span className="rounded-full border border-gray-300 bg-dark/20 px-2 py-0.5 text-xs text-dark">
+              <span
+                className="rounded-full  px-2 py-0.5 text-xs text-white"
+                style={{ backgroundColor: getCourseColor(courseCode) }}
+              >
+                {" "}
                 {courseCode}
               </span>
             )}
             {reoccurring && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Repeat className="size-4 text-dark/20" />
-                    <span>{reoccurring_interval}</span>
-                  </Badge>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Repeat className="size-4 text-dark/20" />
+                <span>{reoccurring_interval}</span>
+              </Badge>
             )}
           </div>
         );
@@ -181,19 +203,18 @@ export function getColumns(
           const diffInDays =
             (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
 
-          // Format the date (e.g., "20 Dec")
           formatted = date.toLocaleDateString("en-AU", {
             day: "numeric",
             month: "short",
             timeZone: "Australia/Sydney",
           });
 
-          if (diffInDays < 0) {
-            // date is in the past
-            bgColor = "bg-red/80"; // ensure valid Tailwind class
+          if (diffInDays < -1) {
+            bgColor = "bg-red/80";
+          }else if (diffInDays < 0){
+            bgColor = "bg-green-300" 
           } else if (diffInDays < 7) {
-            // within a week
-            bgColor = "bg-yellow"; // ensure valid Tailwind class
+            bgColor = "bg-yellow";
           }
         }
         return (
@@ -266,15 +287,12 @@ export function getColumns(
 
         let formatted = "Not Scheduled";
 
-
         if (date != null) {
-
           formatted = date.toLocaleDateString("en-AU", {
             day: "numeric",
             month: "short",
             timeZone: "Australia/Sydney",
           });
-        
         }
         return (
           <div className="flex items-center justify-center space-x-2">
