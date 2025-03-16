@@ -1,4 +1,4 @@
-![Dashboard Image](/images/Personal Dashboard.jpeg?raw=true "Optional Title")
+![Dashboard Image](/images/Personal20%Dashboard.jpeg?raw=true "Optional Title")
 
 React JS Personal Dashboard Project
 - Vite React JS App
